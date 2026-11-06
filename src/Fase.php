@@ -219,7 +219,15 @@ class Fase extends CommonDBTM
                 Evento::record($c->getID(), $f['code'], 'return', 'Para "' . self::name($target['code']) . "\": $comment");
                 $target['status'] = 'pending';
                 self::activate($c, $target, $comment, self::name($f['code']));
-                return 'Devolvido para "' . self::name($target['code']) . '".';
+                $msg = 'Devolvido para "' . self::name($target['code']) . '".';
+                // devolvido ao Aviso de Fechamento: a oportunidade volta para a Negociação no funil do CRM (e o ciclo fica interrompido)
+                if ($target['code'] === 'aviso' && class_exists(\GlpiPlugin\Crm\Conversa::class) && method_exists(\GlpiPlugin\Crm\Conversa::class, 'returnFromCycle')) {
+                    $back = \GlpiPlugin\Crm\Conversa::returnFromCycle($c->getID(), $comment);
+                    if ($back) {
+                        $msg .= " A oportunidade voltou para \"$back\" no funil do CRM; o ciclo fica interrompido até ela seguir de novo para o fechamento.";
+                    }
+                }
+                return $msg;
 
             case 'skip':
                 if (!$f || !Session::haveRight(Ciclo::$rightname, UPDATE)) {
@@ -302,11 +310,21 @@ class Fase extends CommonDBTM
         $c->update(['id' => $c->getID(), '_workflow' => true, 'status' => Ciclo::OPEN]);
         $c->getFromDB($c->getID());
         Evento::record($c->getID(), null, 'resumed', $why);
+        global $DB;
         foreach (self::forCiclo($c->getID()) as $p) {
-            if ($p['status'] === 'pending') {
-                self::activate($c, $p);
+            if ($p['status'] !== 'pending') {
+                continue;
+            }
+            if ($p['code'] === 'aviso') {
+                // o aviso de fechamento é do CRM: ao seguir de novo para o fechamento ele se conclui sozinho
+                $now = $_SESSION['glpi_currenttime'];
+                $DB->update(self::getTable(), ['status' => 'done', 'date_end' => $now, 'users_id_done' => (int) Session::getLoginUserID()], ['id' => $p['id']]);
+                Evento::record($c->getID(), 'aviso', 'done', 'Aviso de fechamento refeito pelo CRM.');
+                self::next($c);
                 return;
             }
+            self::activate($c, $p);
+            return;
         }
     }
 

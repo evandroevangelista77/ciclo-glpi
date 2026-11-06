@@ -107,4 +107,4 @@ sudo -u www-data php bin/console plugin:activate ciclo
 
 O plugin [CRM](https://github.com/evandroevangelista77/crm-glpi) abre o Ciclo sozinho quando a oportunidade chega ao Fechamento ou a venda é concretizada, leva os documentos da venda e já preenche os dados do CRM. O Ciclo mostra um pop-up central de "Aviso de fechamento" ou "Cliente fechado".
 
-**Status "Interrompido" (1.0.5):** se a oportunidade volta para a negociação no CRM, o Ciclo é interrompido: as fases ficam paradas (a fase ativa volta a pendente e o SLO deixa de contar) e as ações ficam bloqueadas. Ele é liberado, na fase em que parou, quando a oportunidade seguir de novo para o Fechamento.
+**Status "Interrompido" (1.0.5):** se a oportunidade volta para a negociação no CRM, o Ciclo é interrompido: as fases ficam paradas (a fase ativa volta a pendente e o SLO deixa de contar) e as ações ficam bloqueadas. Devolver o ciclo ao **Aviso de Fechamento** também faz a oportunidade voltar para a Negociação no funil do CRM. Ele é liberado, na fase em que parou, quando a oportunidade seguir de novo para o Fechamento.
